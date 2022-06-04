@@ -1,0 +1,36 @@
+﻿@page "/categories"
+@inject CategoryService CategoryService
+
+<h3>カテゴリー</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>カテゴリーID</th>
+            <th>カテゴリー名</th>
+            <th>よみがな</th>
+            <th>並び順</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var category in categories)
+        {
+            <tr>
+                <td>@category.CategoryID</td>
+                <td>@category.CategoryName</td>
+                <td>@category.Yomigana</td>
+                <td>@category.SortOrder</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Category> categories = new List<Category>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        categories = await CategoryService.LoadCategoryAsync();
+        Console.WriteLine("OnInitializedAsync");
+    }
+}
