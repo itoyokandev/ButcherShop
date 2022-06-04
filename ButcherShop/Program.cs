@@ -9,12 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddSingleton<WeatherForecastService>();
 
-// 
-builder.Services.AddScoped<CategoryService>();
-
-builder.Services.AddDbContext<ButcherShopContext>(options =>
+builder.Services.AddDbContextFactory<ButcherShopContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ButcherShopDatabase")));
 
 var app = builder.Build();

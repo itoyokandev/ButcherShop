@@ -1,0 +1,148 @@
+﻿@page "/categories/{CategoryID:int}"
+
+@inject IDbContextFactory<ButcherShopContext> DbFactory
+@inject NavigationManager Nav
+
+<style>
+    .row {
+        margin-bottom: 16px;
+    }
+</style>
+
+@if (Category is null)
+{
+    <p><em>読み込み中です...</em></p>
+}
+else
+{
+    <RadzenTemplateForm Data="Category" Submit="@(async (Category arg) => { Submit(arg); })">
+        <div class="row">
+            <div class="col-md-12">
+                <RadzenFieldset Text="カテゴリー情報">
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="カテゴリー名" for="CategoryName" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenTextBox style="width: 100%;" Id="CategoryName" Name="CategoryName" @bind-Value="Category.CategoryName" />
+                            <RadzenRequiredValidator Component="CategoryName" Text="カテゴリー名は必ず入力してください" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="よみがな" for="Yomigana" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="Category.Yomigana" />
+                            <RadzenRequiredValidator Component="Yomigana" Text="よみがなは必ず入力してください" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="並び順" for="SortOrder" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Category.SortOrder" />
+                            <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-md-6" style="margin-top: 16px;">
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="Busy" />
+                            <RadzenButton ButtonType="ButtonType.Submit" Text="更新する" IsBusy="Busy" />
+                        </div>
+                    </div>
+                </RadzenFieldset>
+            </div>
+        </div>
+    </RadzenTemplateForm>
+}
+@if (Error)
+{
+    <div class="row">
+        <div class="alert alert-danger">@ErrorMessage</div>
+    </div>
+}
+
+
+@code {
+    [Parameter]
+    public int CategoryID { get; set; }
+
+    private Category? Category;
+
+    private bool Busy;
+
+    private bool Error;
+
+    private string ErrorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        Category = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
+    }
+
+    /// <summary>
+    /// 必須項目が未入力の場合、Submitメソッドはよびだされない。<br>
+    /// RadzenRequiredValidator
+    /// </summary>
+    /// <param name="arg"></param>
+    private async Task Submit(Category arg)
+    {
+        if (Busy)
+        {
+            return;
+        }
+
+        Busy = true;
+
+        Error = false;
+        ErrorMessage = string.Empty;
+
+        using var context = DbFactory.CreateDbContext();
+
+        Category? dbCategory = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
+        // TODO エラーメッセージが表示されない.カテゴリー情報の項目を変更すると表示される.
+        if (dbCategory is null)
+        {
+            Error = true;
+            ErrorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+            return;
+        }
+
+        if (dbCategory.EditedDatetime > Category.EditedDatetime)
+        {
+            Error = true;
+            ErrorMessage = "このデータは既に更新されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+            return;
+        }
+
+        try
+        {
+            dbCategory.CategoryName = Category.CategoryName;
+            dbCategory.Yomigana = Category.Yomigana;
+            dbCategory.SortOrder = Category.SortOrder;
+            dbCategory.EditedDatetime = DateTime.Now;
+            // TODO User管理
+            dbCategory.EditedUserID = 1;
+            var affectedRows = await context.SaveChangesAsync();
+            Nav.NavigateTo("categories");
+        }
+        catch (Exception ex)
+        {
+            Error = true;
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("categories");
+    }
+}
