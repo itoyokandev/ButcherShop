@@ -1,7 +1,118 @@
-﻿@page "/categories/new"
+﻿@page "/Units/new"
 
-<h3>CategoriesNew</h3>
+@inject IDbContextFactory<ButcherShopContext> DbFactory
+@inject NavigationManager Nav
+
+<style>
+    .row {
+        margin-bottom: 16px;
+    }
+</style>
+
+<RadzenTemplateForm Data="Unit" Submit="@(async (Unit arg) => { SubmitAsync(arg); })">
+    <div class="row">
+        <div class="col-md-12">
+            <RadzenFieldset>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="単位" for="UnitName" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenTextBox style="width: 100%;" Id="UnitName" Name="UnitName" @bind-Value="Unit.UnitName" />
+                            <RadzenRequiredValidator Component="UnitName" Text="単位は必ず入力してください" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="並び順" for="SortOrder" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Unit.SortOrder" />
+                            <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
+                        </div>
+                    </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-8" style="margin-top: 16px;">
+                        <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="Busy" />
+                        <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 20px;" Text="登録する" IsBusy="Busy" />
+                    </div>
+                </div>
+            </RadzenFieldset>
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@if (Error)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-danger">@ErrorMessage</div>
+        </div>
+    </div>
+}
+
 
 @code {
+    private Unit Unit = new();
 
+    private bool Busy;
+
+    private bool Error;
+
+    private string ErrorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = await DbFactory.CreateDbContextAsync();
+        var maxSortOrder = await context.Units.MaxAsync(c => c.SortOrder);
+        Unit.SortOrder = maxSortOrder + 1;
+    }
+
+    private async Task SubmitAsync(Unit arg)
+    {
+        if (Busy)
+        {
+            return;
+        }
+
+        try
+        {
+            Busy = true;
+            Error = false;
+            ErrorMessage = string.Empty;
+
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            int nameSameCount = await context.Units.CountAsync(c => c.UnitName == arg.UnitName.Trim());
+            if (nameSameCount > 0)
+            {
+                Error = true;
+                ErrorMessage = "同じ単位が既に登録されているため登録できません。";
+                return;
+            }
+
+            arg.EditedDatetime = DateTime.Now;
+            // TODO User管理
+            arg.EditedUserID = 1;
+            await context.Units.AddAsync(arg);
+            var affectedRows = await context.SaveChangesAsync();
+            Nav.NavigateTo("units");
+        }
+        catch (Exception ex)
+        {
+            Error = true;
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+            // 再レンダリングされないため、StateHasChangedメソッドを実行する。
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("units");
+    }
 }

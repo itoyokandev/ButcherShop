@@ -1,0 +1,49 @@
+﻿@page "/units"
+
+@inject IDbContextFactory<ButcherShopContext> DbFactory
+
+<h3>単位マスタ</h3>
+
+<a href="/units/new" class="btn btn-primary" role="button">単位を追加する</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>単位</th>
+            <th>並び順</th>
+            <th>更新日時</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (units is null)
+        {
+            <p><em>読み込み中です...</em></p>
+        }
+        else
+        {
+            @foreach (var unit in units)
+            {
+                <tr>
+                    <td><a href="/units/@unit.UnitID">@unit.UnitName</a></td>
+                    <td>@unit.SortOrder</td>
+                    <td>@unit.EditedDatetime</td>
+                </tr>
+            }
+
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Unit>? units;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var context = DbFactory.CreateDbContext();
+
+        if (context is not null && context.Units is not null)
+        {
+            units = await context.Units.OrderBy(c => c.SortOrder).ToListAsync();
+        }
+    }
+}

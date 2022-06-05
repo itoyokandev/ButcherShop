@@ -1,0 +1,127 @@
+﻿@page "/categories/new"
+
+@inject IDbContextFactory<ButcherShopContext> DbFactory
+@inject NavigationManager Nav
+
+<style>
+    .row {
+        margin-bottom: 16px;
+    }
+</style>
+
+<RadzenTemplateForm Data="Category" Submit="@(async (Category arg) => { SubmitAsync(arg); })">
+    <div class="row">
+        <div class="col-md-12">
+            <RadzenFieldset>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="カテゴリー名" for="CategoryName" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenTextBox style="width: 100%;" Id="CategoryName" Name="CategoryName" @bind-Value="Category.CategoryName" />
+                        <RadzenRequiredValidator Component="CategoryName" Text="カテゴリー名は必ず入力してください" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="よみがな" for="Yomigana" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="Category.Yomigana" />
+                        <RadzenRequiredValidator Component="Yomigana" Text="よみがなは必ず入力してください" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="並び順" for="SortOrder" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Category.SortOrder" />
+                        <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-8" style="margin-top: 16px;">
+                        <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="Busy" />
+                        <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 20px;" Text="登録する" IsBusy="Busy" />
+                    </div>
+                </div>
+            </RadzenFieldset>
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@if (Error)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-danger">@ErrorMessage</div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private Category Category = new();
+
+    private bool Busy;
+
+    private bool Error;
+
+    private string ErrorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = await DbFactory.CreateDbContextAsync();
+        var maxSortOrder = await context.Categories.MaxAsync(c => c.SortOrder);
+        Category.SortOrder = maxSortOrder + 1;
+    }
+
+    private async Task SubmitAsync(Category arg)
+    {
+        if (Busy)
+        {
+            return;
+        }
+
+        try
+        {
+            Busy = true;
+            Error = false;
+            ErrorMessage = string.Empty;
+
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            int nameSameCount = await context.Categories.CountAsync(c => c.CategoryName == arg.CategoryName.Trim());
+            if (nameSameCount > 0)
+            {
+                Error = true;
+                ErrorMessage = "同じカテゴリー名で既に登録されているため登録できません。";
+                return;
+            }
+
+            arg.EditedDatetime = DateTime.Now;
+            // TODO User管理
+            arg.EditedUserID = 1;
+            await context.Categories.AddAsync(arg);
+            var affectedRows = await context.SaveChangesAsync();
+            Nav.NavigateTo("categories");
+        }
+        catch (Exception ex)
+        {
+            Error = true;
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+            // 再レンダリングされないため、StateHasChangedメソッドを実行する。
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("categories");
+    }
+}

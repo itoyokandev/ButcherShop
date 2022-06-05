@@ -1,5 +1,4 @@
-﻿using ButcherShop.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace ButcherShop.Data
@@ -12,6 +11,10 @@ namespace ButcherShop.Data
         }
 
         public DbSet<Category>? Categories { get; set; }
+
+        public DbSet<Unit>? Units { get; set; }
+
+        public DbSet<Product>? Products { get; set; }
 
         /// <summary>
         /// Dispose pattern.

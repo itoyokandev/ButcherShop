@@ -1,4 +1,4 @@
-﻿@page "/categories/{CategoryID:int}"
+﻿@page "/products/{ProductID:int}"
 
 @inject IDbContextFactory<ButcherShopContext> DbFactory
 @inject NavigationManager Nav
@@ -9,23 +9,23 @@
     }
 </style>
 
-@if (Category is null)
+@if (Product is null)
 {
     <p><em>読み込み中です...</em></p>
 }
 else
 {
-    <RadzenTemplateForm Data="Category" Submit="@(async (Category arg) => { SubmitAsync(arg); })">
+    <RadzenTemplateForm Data="Product" Submit="@(async (Product arg) => { SubmitAsync(arg); })">
         <div class="row">
             <div class="col-md-12">
                 <RadzenFieldset>
-                    <div class="row">
+@*                    <div class="row">
                         <div class="col-md-4 align-items-center d-flex">
-                            <RadzenLabel Text="カテゴリー名" for="CategoryName" />
+                            <RadzenLabel Text="カテゴリー名" for="ProductName" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenTextBox style="width: 100%;" Id="CategoryName" Name="CategoryName" @bind-Value="Category.CategoryName" />
-                            <RadzenRequiredValidator Component="CategoryName" Text="カテゴリー名は必ず入力してください" />
+                            <RadzenTextBox style="width: 100%;" Id="ProductName" Name="ProductName" @bind-Value="Product.ProductName" />
+                            <RadzenRequiredValidator Component="ProductName" Text="カテゴリー名は必ず入力してください" />
                         </div>
                     </div>
                     <div class="row">
@@ -33,7 +33,7 @@ else
                             <RadzenLabel Text="よみがな" for="Yomigana" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="Category.Yomigana" />
+                            <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="Product.Yomigana" />
                             <RadzenRequiredValidator Component="Yomigana" Text="よみがなは必ず入力してください" />
                         </div>
                     </div>
@@ -42,10 +42,10 @@ else
                             <RadzenLabel Text="並び順" for="SortOrder" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Category.SortOrder" />
+                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Product.SortOrder" />
                             <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
                         </div>
-                    </div>
+                    </div>*@
                     <div class="row justify-content-center">
                         <div class="col-md-8" style="margin-top: 16px;">
                             <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="Busy" />
@@ -72,9 +72,9 @@ else
 
 @code {
     [Parameter]
-    public int CategoryID { get; set; }
+    public int ProductID { get; set; }
 
-    private Category? Category;
+    private Product? Product;
 
     private bool Busy;
 
@@ -86,12 +86,12 @@ else
     {
         using var context = await DbFactory.CreateDbContextAsync();
 
-        Category = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
+        Product = await context.Products.FirstOrDefaultAsync(c => c.ProductID == ProductID);
     }
 
     private void Cancel()
     {
-        Nav.NavigateTo("categories");
+        Nav.NavigateTo("products");
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ else
     /// RadzenRequiredValidator
     /// </summary>
     /// <param name="arg"></param>
-    private async Task SubmitAsync(Category arg)
+    private async Task SubmitAsync(Product arg)
     {
         if (Busy)
         {
@@ -114,37 +114,37 @@ else
 
             using var context = await DbFactory.CreateDbContextAsync();
 
-            Category? dbCategory = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
-            if (dbCategory is null)
+            Product? dbProduct = await context.Products.FirstOrDefaultAsync(c => c.ProductID == ProductID);
+            if (dbProduct is null)
             {
                 Error = true;
                 ErrorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
-            if (dbCategory.EditedDatetime > arg.EditedDatetime)
+            if (dbProduct.EditedDatetime > arg.EditedDatetime)
             {
                 Error = true;
                 ErrorMessage = "このデータは既に更新されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
-            int nameSameCount = await context.Categories.CountAsync(c => c.CategoryID != CategoryID && c.CategoryName == arg.CategoryName.Trim());
+            int nameSameCount = await context.Products.CountAsync(c => c.ProductID != ProductID && c.ProductName == arg.ProductName.Trim());
             if (nameSameCount > 0)
             {
                 Error = true;
-                ErrorMessage = "同じカテゴリー名で既に登録されているため更新できません。";
+                ErrorMessage = "同じ商品名で既に登録されているため更新できません。";
                 return;
             }
 
-            dbCategory.CategoryName = arg.CategoryName.Trim();
-            dbCategory.Yomigana = arg.Yomigana.Trim();
-            dbCategory.SortOrder = arg.SortOrder;
-            dbCategory.EditedDatetime = DateTime.Now;
+            dbProduct.ProductName = arg.ProductName.Trim();
+            dbProduct.Yomigana = arg.Yomigana.Trim();
+            dbProduct.SortOrder = arg.SortOrder;
+            dbProduct.EditedDatetime = DateTime.Now;
             // TODO User管理
-            dbCategory.EditedUserID = 1;
+            dbProduct.EditedUserID = 1;
             var affectedRows = await context.SaveChangesAsync();
-            Nav.NavigateTo("categories");
+            Nav.NavigateTo("products");
         }
         catch (Exception ex)
         {
@@ -174,20 +174,17 @@ else
 
             using var context = await DbFactory.CreateDbContextAsync();
 
-            Category? dbCategory = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
-            if (dbCategory is null)
+            Product? dbProduct = await context.Products.FirstOrDefaultAsync(c => c.ProductID == ProductID);
+            if (dbProduct is null)
             {
                 Error = true;
                 ErrorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
-            // TODO 商品マスタに紐づいているカテゴリーがある場合エラー
-
-
-            context.Categories.Remove(dbCategory);
+            context.Products.Remove(dbProduct);
             await context.SaveChangesAsync();
-            Nav.NavigateTo("categories");
+            Nav.NavigateTo("products");
         }
         catch (Exception ex)
         {

@@ -1,4 +1,4 @@
-﻿@page "/categories/{CategoryID:int}"
+﻿@page "/units/{UnitID:int}"
 
 @inject IDbContextFactory<ButcherShopContext> DbFactory
 @inject NavigationManager Nav
@@ -9,32 +9,23 @@
     }
 </style>
 
-@if (Category is null)
+@if (Unit is null)
 {
     <p><em>読み込み中です...</em></p>
 }
 else
 {
-    <RadzenTemplateForm Data="Category" Submit="@(async (Category arg) => { SubmitAsync(arg); })">
+    <RadzenTemplateForm Data="Unit" Submit="@(async (Unit arg) => { SubmitAsync(arg); })">
         <div class="row">
             <div class="col-md-12">
                 <RadzenFieldset>
                     <div class="row">
                         <div class="col-md-4 align-items-center d-flex">
-                            <RadzenLabel Text="カテゴリー名" for="CategoryName" />
+                            <RadzenLabel Text="単位" for="UnitName" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenTextBox style="width: 100%;" Id="CategoryName" Name="CategoryName" @bind-Value="Category.CategoryName" />
-                            <RadzenRequiredValidator Component="CategoryName" Text="カテゴリー名は必ず入力してください" />
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 align-items-center d-flex">
-                            <RadzenLabel Text="よみがな" for="Yomigana" />
-                        </div>
-                        <div class="col-md-8">
-                            <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="Category.Yomigana" />
-                            <RadzenRequiredValidator Component="Yomigana" Text="よみがなは必ず入力してください" />
+                            <RadzenTextBox style="width: 100%;" Id="UnitName" Name="UnitName" @bind-Value="Unit.UnitName" />
+                            <RadzenRequiredValidator Component="UnitName" Text="単位は必ず入力してください" />
                         </div>
                     </div>
                     <div class="row">
@@ -42,7 +33,7 @@ else
                             <RadzenLabel Text="並び順" for="SortOrder" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Category.SortOrder" />
+                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Unit.SortOrder" />
                             <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
                         </div>
                     </div>
@@ -72,9 +63,9 @@ else
 
 @code {
     [Parameter]
-    public int CategoryID { get; set; }
+    public int UnitID { get; set; }
 
-    private Category? Category;
+    private Unit? Unit;
 
     private bool Busy;
 
@@ -86,12 +77,12 @@ else
     {
         using var context = await DbFactory.CreateDbContextAsync();
 
-        Category = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
+        Unit = await context.Units.FirstOrDefaultAsync(c => c.UnitID == UnitID);
     }
 
     private void Cancel()
     {
-        Nav.NavigateTo("categories");
+        Nav.NavigateTo("units");
     }
 
     /// <summary>
@@ -99,7 +90,7 @@ else
     /// RadzenRequiredValidator
     /// </summary>
     /// <param name="arg"></param>
-    private async Task SubmitAsync(Category arg)
+    private async Task SubmitAsync(Unit arg)
     {
         if (Busy)
         {
@@ -114,37 +105,36 @@ else
 
             using var context = await DbFactory.CreateDbContextAsync();
 
-            Category? dbCategory = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
-            if (dbCategory is null)
+            Unit? dbUnit = await context.Units.FirstOrDefaultAsync(c => c.UnitID == UnitID);
+            if (dbUnit is null)
             {
                 Error = true;
                 ErrorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
-            if (dbCategory.EditedDatetime > arg.EditedDatetime)
+            if (dbUnit.EditedDatetime > arg.EditedDatetime)
             {
                 Error = true;
                 ErrorMessage = "このデータは既に更新されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
-            int nameSameCount = await context.Categories.CountAsync(c => c.CategoryID != CategoryID && c.CategoryName == arg.CategoryName.Trim());
+            int nameSameCount = await context.Units.CountAsync(c => c.UnitID != UnitID && c.UnitName == arg.UnitName.Trim());
             if (nameSameCount > 0)
             {
                 Error = true;
-                ErrorMessage = "同じカテゴリー名で既に登録されているため更新できません。";
+                ErrorMessage = "同じ単位が既に登録されているため更新できません。";
                 return;
             }
 
-            dbCategory.CategoryName = arg.CategoryName.Trim();
-            dbCategory.Yomigana = arg.Yomigana.Trim();
-            dbCategory.SortOrder = arg.SortOrder;
-            dbCategory.EditedDatetime = DateTime.Now;
+            dbUnit.UnitName = arg.UnitName.Trim();
+            dbUnit.SortOrder = arg.SortOrder;
+            dbUnit.EditedDatetime = DateTime.Now;
             // TODO User管理
-            dbCategory.EditedUserID = 1;
+            dbUnit.EditedUserID = 1;
             var affectedRows = await context.SaveChangesAsync();
-            Nav.NavigateTo("categories");
+            Nav.NavigateTo("units");
         }
         catch (Exception ex)
         {
@@ -174,8 +164,8 @@ else
 
             using var context = await DbFactory.CreateDbContextAsync();
 
-            Category? dbCategory = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
-            if (dbCategory is null)
+            Unit? dbUnit = await context.Units.FirstOrDefaultAsync(c => c.UnitID == UnitID);
+            if (dbUnit is null)
             {
                 Error = true;
                 ErrorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
@@ -185,9 +175,9 @@ else
             // TODO 商品マスタに紐づいているカテゴリーがある場合エラー
 
 
-            context.Categories.Remove(dbCategory);
+            context.Units.Remove(dbUnit);
             await context.SaveChangesAsync();
-            Nav.NavigateTo("categories");
+            Nav.NavigateTo("units");
         }
         catch (Exception ex)
         {

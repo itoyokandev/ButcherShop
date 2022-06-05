@@ -1,0 +1,191 @@
+﻿@page "/products/new"
+
+@inject IDbContextFactory<ButcherShopContext> DbFactory
+@inject NavigationManager Nav
+
+<style>
+    .row {
+        margin-bottom: 16px;
+    }
+</style>
+
+<RadzenTemplateForm Data="Product" Submit="@(async (Product arg) => { SubmitAsync(arg); })">
+    <div class="row">
+        <div class="col-md-12">
+            <RadzenFieldset>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="商品名" for="ProductName" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenTextBox style="width: 100%;" Id="ProductName" Name="ProductName" @bind-Value="Product.ProductName" />
+                        <RadzenRequiredValidator Component="ProductName" Text="商品名は必ず入力してください" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="よみがな" for="Yomigana" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="Product.Yomigana" />
+                        <RadzenRequiredValidator Component="Yomigana" Text="よみがなは必ず入力してください" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="カテゴリー" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenDropDown AllowClear="false" TValue="string" AllowVirtualization="true" Class="w-100"
+                                        Data=@Categories TextProperty="CategoryName" ValueProperty="CategoryID"
+                                        Value="Product.CategoryID" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="ラベル印刷" for="LabelPrintingTarget" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenSelectBar @bind-Value="Product.LabelPrintingTarget" TValue="bool">
+                            <Items>
+                                <RadzenSelectBarItem Text="する" Value="true" />
+                                <RadzenSelectBarItem Text="しない" Value="false" />
+                            </Items>
+                        </RadzenSelectBar>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="味付け" for="TargetOfSeasoning" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenSelectBar @bind-Value="Product.TargetOfSeasoning" TValue="bool">
+                            <Items>
+                                <RadzenSelectBarItem Text="する" Value="true" />
+                                <RadzenSelectBarItem Text="しない" Value="false" />
+                            </Items>
+                        </RadzenSelectBar>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="単位" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenDropDown AllowClear="false" TValue="string" AllowVirtualization="true" Class="w-100"
+                                        Data=@Units TextProperty="UnitName" ValueProperty="UnitID"
+                                        Value="Product.UnitID" />
+                        <RadzenRequiredValidator Component="UnitID" Text="単位は必ず選択してください" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="単価" for="UnitPrice" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenNumeric style="width: 100%;" Id="UnitPrice" Name="UnitPrice" @bind-Value="Product.UnitPrice" />
+                        <RadzenRequiredValidator Component="UnitPrice" Text="単価は必ず入力してください" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 align-items-center d-flex">
+                        <RadzenLabel Text="並び順" for="SortOrder" />
+                    </div>
+                    <div class="col-md-8">
+                        <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Product.SortOrder" />
+                        <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-8" style="margin-top: 16px;">
+                        <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="Busy" />
+                        <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 20px;" Text="登録する" IsBusy="Busy" />
+                    </div>
+                </div>
+            </RadzenFieldset>
+        </div>
+    </div>
+</RadzenTemplateForm>
+
+@if (Error)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-danger">@ErrorMessage</div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private Product Product = new();
+
+    private List<Category>? Categories;
+
+    private List<Unit>? Units;
+
+    private bool Busy;
+
+    private bool Error;
+
+    private string ErrorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = await DbFactory.CreateDbContextAsync();
+        Categories = await context.Categories.OrderBy(c => c.SortOrder).ToListAsync();
+        Units = await context.Units.OrderBy(u => u.SortOrder).ToListAsync();
+    }
+
+    private async Task SubmitAsync(Product arg)
+    {
+        if (Busy)
+        {
+            return;
+        }
+
+        try
+        {
+            Busy = true;
+            Error = false;
+            ErrorMessage = string.Empty;
+
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            int nameSameCount = await context.Products.CountAsync(c => c.ProductName == arg.ProductName.Trim());
+            if (nameSameCount > 0)
+            {
+                Error = true;
+                ErrorMessage = "同じ商品名が既に登録されているため登録できません。";
+                return;
+            }
+
+            // TODO DropDownを選択してもテキストボックス？のところに反映されるタイミングがとても遅い
+            // TODO UnitIDが選択したものではなく、0が設定される
+            // TODO 消費税率の設定
+            arg.TaxRate = 0.08m;
+            arg.EditedDatetime = DateTime.Now;
+            // TODO User管理
+            arg.EditedUserID = 1;
+            await context.Products.AddAsync(arg);
+            var affectedRows = await context.SaveChangesAsync();
+            Nav.NavigateTo("products");
+        }
+        catch (Exception ex)
+        {
+            Error = true;
+            ErrorMessage = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+            // 再レンダリングされないため、StateHasChangedメソッドを実行する。
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("products");
+    }
+}
