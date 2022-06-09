@@ -16,13 +16,13 @@
         </tr>
     </thead>
     <tbody>
-        @if (categories is null)
+        @if (_categories is null)
         {
             <p><em>読み込み中です...</em></p>
         }
         else
         {
-            @foreach (var category in categories)
+            @foreach (var category in _categories)
             {
                 <tr>
                     <td><a href="/categories/@category.CategoryID">@category.CategoryName</a></td>
@@ -37,7 +37,7 @@
 </table>
 
 @code {
-    private List<Category>? categories;
+    private List<Category>? _categories;
 
     protected override async Task OnInitializedAsync()
     {
@@ -45,7 +45,7 @@
 
         if (context is not null && context.Categories is not null)
         {
-            categories = await context.Categories.OrderBy(c => c.SortOrder).ToListAsync();
+            _categories = await context.Categories.OrderBy(c => c.SortOrder).ToListAsync();
         }
     }
 }

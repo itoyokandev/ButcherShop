@@ -9,7 +9,7 @@
     }
 </style>
 
-<RadzenTemplateForm Data="Unit" Submit="@(async (Unit arg) => { SubmitAsync(arg); })">
+<RadzenTemplateForm Data="_unit" Submit="@(async (Unit arg) => { SubmitAsync(arg); })">
     <div class="row">
         <div class="col-md-12">
             <RadzenFieldset>
@@ -18,7 +18,7 @@
                             <RadzenLabel Text="単位" for="UnitName" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenTextBox style="width: 100%;" Id="UnitName" Name="UnitName" @bind-Value="Unit.UnitName" />
+                            <RadzenTextBox style="width: 100%;" Id="UnitName" Name="UnitName" @bind-Value="_unit.UnitName" />
                             <RadzenRequiredValidator Component="UnitName" Text="単位は必ず入力してください" />
                         </div>
                     </div>
@@ -27,14 +27,14 @@
                             <RadzenLabel Text="並び順" for="SortOrder" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Unit.SortOrder" />
+                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="_unit.SortOrder" />
                             <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
                         </div>
                     </div>
                 <div class="row justify-content-center">
                     <div class="col-md-8" style="margin-top: 16px;">
-                        <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="Busy" />
-                        <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 20px;" Text="登録する" IsBusy="Busy" />
+                        <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="_busy" />
+                        <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 20px;" Text="登録する" IsBusy="_busy" />
                     </div>
                 </div>
             </RadzenFieldset>
@@ -42,52 +42,52 @@
     </div>
 </RadzenTemplateForm>
 
-@if (Error)
+@if (_error)
 {
     <div class="row">
         <div class="col-md-12">
-            <div class="alert alert-danger">@ErrorMessage</div>
+            <div class="alert alert-danger">@_errorMessage</div>
         </div>
     </div>
 }
 
 
 @code {
-    private Unit Unit = new();
+    private Unit _unit = new();
 
-    private bool Busy;
+    private bool _busy;
 
-    private bool Error;
+    private bool _error;
 
-    private string ErrorMessage = string.Empty;
+    private string _errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         using var context = await DbFactory.CreateDbContextAsync();
         var maxSortOrder = await context.Units.MaxAsync(c => c.SortOrder);
-        Unit.SortOrder = maxSortOrder + 1;
+        _unit.SortOrder = maxSortOrder + 1;
     }
 
     private async Task SubmitAsync(Unit arg)
     {
-        if (Busy)
+        if (_busy)
         {
             return;
         }
 
         try
         {
-            Busy = true;
-            Error = false;
-            ErrorMessage = string.Empty;
+            _busy = true;
+            _error = false;
+            _errorMessage = string.Empty;
 
             using var context = await DbFactory.CreateDbContextAsync();
 
             int nameSameCount = await context.Units.CountAsync(c => c.UnitName == arg.UnitName.Trim());
             if (nameSameCount > 0)
             {
-                Error = true;
-                ErrorMessage = "同じ単位が既に登録されているため登録できません。";
+                _error = true;
+                _errorMessage = "同じ単位が既に登録されているため登録できません。";
                 return;
             }
 
@@ -100,14 +100,14 @@
         }
         catch (Exception ex)
         {
-            Error = true;
-            ErrorMessage = ex.Message;
+            _error = true;
+            _errorMessage = ex.Message;
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             // 再レンダリングされないため、StateHasChangedメソッドを実行する。
-            StateHasChanged();
+            InvokeAsync(StateHasChanged);
         }
     }
 

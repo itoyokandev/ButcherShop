@@ -29,6 +29,11 @@ namespace ButcherShop.Data
         public int CategoryID { get; set; } = 1;
 
         /// <summary>
+        /// カテゴリー
+        /// </summary>
+        public Category Category { get; set; }
+
+        /// <summary>
         /// ラベル印刷対象
         /// <para>false:印刷対象外, true:印刷対象</para>
         /// </summary>
@@ -44,6 +49,11 @@ namespace ButcherShop.Data
         /// 単位ID
         /// </summary>
         public int UnitID { get; set; }
+
+        /// <summary>
+        /// 単位
+        /// </summary>
+        public Unit Unit { get; set; }
 
         /// <summary>
         /// 単価(100g当たり)

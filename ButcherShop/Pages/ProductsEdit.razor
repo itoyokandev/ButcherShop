@@ -9,23 +9,23 @@
     }
 </style>
 
-@if (Product is null)
+@if (_product is null)
 {
     <p><em>読み込み中です...</em></p>
 }
 else
 {
-    <RadzenTemplateForm Data="Product" Submit="@(async (Product arg) => { SubmitAsync(arg); })">
+    <RadzenTemplateForm Data="_product" Submit="@(async (Product arg) => { SubmitAsync(arg); })">
         <div class="row">
             <div class="col-md-12">
                 <RadzenFieldset>
-@*                    <div class="row">
+                    <div class="row">
                         <div class="col-md-4 align-items-center d-flex">
-                            <RadzenLabel Text="カテゴリー名" for="ProductName" />
+                            <RadzenLabel Text="商品名" for="ProductName" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenTextBox style="width: 100%;" Id="ProductName" Name="ProductName" @bind-Value="Product.ProductName" />
-                            <RadzenRequiredValidator Component="ProductName" Text="カテゴリー名は必ず入力してください" />
+                            <RadzenTextBox style="width: 100%;" Id="ProductName" Name="ProductName" @bind-Value="_product.ProductName" />
+                            <RadzenRequiredValidator Component="ProductName" Text="商品名は必ず入力してください" />
                         </div>
                     </div>
                     <div class="row">
@@ -33,8 +33,73 @@ else
                             <RadzenLabel Text="よみがな" for="Yomigana" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="Product.Yomigana" />
+                            <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="_product.Yomigana" />
                             <RadzenRequiredValidator Component="Yomigana" Text="よみがなは必ず入力してください" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="カテゴリー" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenDropDown AllowClear="false"
+                                        TValue="int"
+                                        AllowVirtualization="true"
+                                        Class="w-100"
+                                        Data=@_categories
+                                        TextProperty="CategoryName"
+                                        ValueProperty="CategoryID"
+                                        @bind-Value="_product.CategoryID" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="ラベル印刷" for="LabelPrintingTarget" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenSelectBar @bind-Value="_product.LabelPrintingTarget" TValue="bool">
+                                <Items>
+                                    <RadzenSelectBarItem Text="する" Value="true" />
+                                    <RadzenSelectBarItem Text="しない" Value="false" />
+                                </Items>
+                            </RadzenSelectBar>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="味付け" for="TargetOfSeasoning" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenSelectBar @bind-Value="_product.TargetOfSeasoning" TValue="bool">
+                                <Items>
+                                    <RadzenSelectBarItem Text="する" Value="true" />
+                                    <RadzenSelectBarItem Text="しない" Value="false" />
+                                </Items>
+                            </RadzenSelectBar>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="単位" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenDropDown AllowClear="false"
+                                        TValue="int"
+                                        AllowVirtualization="true"
+                                        Class="w-100"
+                                        Data=@_units
+                                        TextProperty="UnitName"
+                                        ValueProperty="UnitID"
+                                        @bind-Value="_product.UnitID" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="単価" for="UnitPrice" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenNumeric style="width: 100%;" Id="UnitPrice" Name="UnitPrice" @bind-Value="_product.UnitPrice" />
+                            <RadzenRequiredValidator Component="UnitPrice" Text="単価は必ず入力してください" />
                         </div>
                     </div>
                     <div class="row">
@@ -42,15 +107,15 @@ else
                             <RadzenLabel Text="並び順" for="SortOrder" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Product.SortOrder" />
+                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="_product.SortOrder" />
                             <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
                         </div>
-                    </div>*@
+                    </div>
                     <div class="row justify-content-center">
                         <div class="col-md-8" style="margin-top: 16px;">
-                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="Busy" />
-                            <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 40px;" Text="更新する" IsBusy="Busy" />
-                            <RadzenButton ButtonType="ButtonType.Button" class="btn btn-danger" Text="削除する" Click="@(async (_) => { DeleteAsync(); })" IsBusy="Busy" />
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" Is_busy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 40px;" Text="更新する" Is_busy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Button" class="btn btn-danger" Text="削除する" Click="@(async (_) => { DeleteAsync(); })" Is_busy="_busy" />
                         </div>
                     </div>
                 </RadzenFieldset>
@@ -59,34 +124,41 @@ else
     </RadzenTemplateForm>
 }
 
-@if (Error)
+@if (_error)
 {
     <div class="row">
         <div class="col-md-12">
-            <div class="alert alert-danger">@ErrorMessage</div>
+            <div class="alert alert-danger">@_errorMessage</div>
         </div>
     </div>
 }
-
-
 
 @code {
     [Parameter]
     public int ProductID { get; set; }
 
-    private Product? Product;
+    private Product? _product;
 
-    private bool Busy;
+    private IEnumerable<Category>? _categories;
 
-    private bool Error;
+    private IEnumerable<Unit>? _units;
 
-    private string ErrorMessage = string.Empty;
+    private bool _busy;
+
+    private bool _error;
+
+    private string _errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         using var context = await DbFactory.CreateDbContextAsync();
 
-        Product = await context.Products.FirstOrDefaultAsync(c => c.ProductID == ProductID);
+        _product = await context.Products
+                    .Include(p => p.Category)
+                    .Include(p => p.Unit)
+                    .FirstOrDefaultAsync(c => c.ProductID == ProductID);
+        _categories = await context.Categories.OrderBy(c => c.SortOrder).ToListAsync();
+        _units = await context.Units.OrderBy(u => u.SortOrder).ToListAsync();
     }
 
     private void Cancel()
@@ -101,44 +173,49 @@ else
     /// <param name="arg"></param>
     private async Task SubmitAsync(Product arg)
     {
-        if (Busy)
+        if (_busy)
         {
             return;
         }
 
         try
         {
-            Busy = true;
-            Error = false;
-            ErrorMessage = string.Empty;
+            _busy = true;
+            _error = false;
+            _errorMessage = string.Empty;
 
             using var context = await DbFactory.CreateDbContextAsync();
 
             Product? dbProduct = await context.Products.FirstOrDefaultAsync(c => c.ProductID == ProductID);
             if (dbProduct is null)
             {
-                Error = true;
-                ErrorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                _error = true;
+                _errorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
             if (dbProduct.EditedDatetime > arg.EditedDatetime)
             {
-                Error = true;
-                ErrorMessage = "このデータは既に更新されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                _error = true;
+                _errorMessage = "このデータは既に更新されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
             int nameSameCount = await context.Products.CountAsync(c => c.ProductID != ProductID && c.ProductName == arg.ProductName.Trim());
             if (nameSameCount > 0)
             {
-                Error = true;
-                ErrorMessage = "同じ商品名で既に登録されているため更新できません。";
+                _error = true;
+                _errorMessage = "同じ商品名で既に登録されているため更新できません。";
                 return;
             }
 
             dbProduct.ProductName = arg.ProductName.Trim();
             dbProduct.Yomigana = arg.Yomigana.Trim();
+            dbProduct.CategoryID = arg.CategoryID;
+            dbProduct.LabelPrintingTarget = arg.LabelPrintingTarget;
+            dbProduct.TargetOfSeasoning = arg.TargetOfSeasoning;
+            dbProduct.UnitID = arg.UnitID;
+            dbProduct.UnitPrice = arg.UnitPrice;
             dbProduct.SortOrder = arg.SortOrder;
             dbProduct.EditedDatetime = DateTime.Now;
             // TODO User管理
@@ -148,12 +225,12 @@ else
         }
         catch (Exception ex)
         {
-            Error = true;
-            ErrorMessage = ex.Message;
+            _error = true;
+            _errorMessage = ex.Message;
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             // 再レンダリングされないため、StateHasChangedメソッドを実行する。
             StateHasChanged();
         }
@@ -161,24 +238,24 @@ else
 
     private async Task DeleteAsync()
     {
-        if (Busy)
+        if (_busy)
         {
             return;
         }
 
         try
         {
-            Busy = true;
-            Error = false;
-            ErrorMessage = string.Empty;
+            _busy = true;
+            _error = false;
+            _errorMessage = string.Empty;
 
             using var context = await DbFactory.CreateDbContextAsync();
 
             Product? dbProduct = await context.Products.FirstOrDefaultAsync(c => c.ProductID == ProductID);
             if (dbProduct is null)
             {
-                Error = true;
-                ErrorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                _error = true;
+                _errorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
@@ -188,14 +265,15 @@ else
         }
         catch (Exception ex)
         {
-            Error = true;
-            ErrorMessage = ex.Message;
+            _error = true;
+            _errorMessage = ex.Message;
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             // 再レンダリングされないため、StateHasChangedメソッドを実行する。
             StateHasChanged();
         }
     }
+
 }

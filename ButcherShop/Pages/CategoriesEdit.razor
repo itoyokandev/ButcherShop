@@ -9,13 +9,13 @@
     }
 </style>
 
-@if (Category is null)
+@if (_category is null)
 {
     <p><em>読み込み中です...</em></p>
 }
 else
 {
-    <RadzenTemplateForm Data="Category" Submit="@(async (Category arg) => { SubmitAsync(arg); })">
+    <RadzenTemplateForm Data="_category" Submit="@(async (Category arg) => { SubmitAsync(arg); })">
         <div class="row">
             <div class="col-md-12">
                 <RadzenFieldset>
@@ -24,7 +24,7 @@ else
                             <RadzenLabel Text="カテゴリー名" for="CategoryName" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenTextBox style="width: 100%;" Id="CategoryName" Name="CategoryName" @bind-Value="Category.CategoryName" />
+                            <RadzenTextBox style="width: 100%;" Id="CategoryName" Name="CategoryName" @bind-Value="_category.CategoryName" />
                             <RadzenRequiredValidator Component="CategoryName" Text="カテゴリー名は必ず入力してください" />
                         </div>
                     </div>
@@ -33,7 +33,7 @@ else
                             <RadzenLabel Text="よみがな" for="Yomigana" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="Category.Yomigana" />
+                            <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="_category.Yomigana" />
                             <RadzenRequiredValidator Component="Yomigana" Text="よみがなは必ず入力してください" />
                         </div>
                     </div>
@@ -42,15 +42,15 @@ else
                             <RadzenLabel Text="並び順" for="SortOrder" />
                         </div>
                         <div class="col-md-8">
-                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="Category.SortOrder" />
+                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="_category.SortOrder" />
                             <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
                         </div>
                     </div>
                     <div class="row justify-content-center">
                         <div class="col-md-8" style="margin-top: 16px;">
-                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="Busy" />
-                            <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 40px;" Text="更新する" IsBusy="Busy" />
-                            <RadzenButton ButtonType="ButtonType.Button" class="btn btn-danger" Text="削除する" Click="@(async (_) => { DeleteAsync(); })" IsBusy="Busy" />
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" IsBusy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 40px;" Text="更新する" IsBusy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Button" class="btn btn-danger" Text="削除する" Click="@(async (_) => { DeleteAsync(); })" IsBusy="_busy" />
                         </div>
                     </div>
                 </RadzenFieldset>
@@ -59,11 +59,11 @@ else
     </RadzenTemplateForm>
 }
 
-@if (Error)
+@if (_error)
 {
     <div class="row">
         <div class="col-md-12">
-            <div class="alert alert-danger">@ErrorMessage</div>
+            <div class="alert alert-danger">@_errorMessage</div>
         </div>
     </div>
 }
@@ -74,19 +74,19 @@ else
     [Parameter]
     public int CategoryID { get; set; }
 
-    private Category? Category;
+    private Category? _category;
 
-    private bool Busy;
+    private bool _busy;
 
-    private bool Error;
+    private bool _error;
 
-    private string ErrorMessage = string.Empty;
+    private string _errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         using var context = await DbFactory.CreateDbContextAsync();
 
-        Category = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
+        _category = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
     }
 
     private void Cancel()
@@ -101,39 +101,39 @@ else
     /// <param name="arg"></param>
     private async Task SubmitAsync(Category arg)
     {
-        if (Busy)
+        if (_busy)
         {
             return;
         }
 
         try
         {
-            Busy = true;
-            Error = false;
-            ErrorMessage = string.Empty;
+            _busy = true;
+            _error = false;
+            _errorMessage = string.Empty;
 
             using var context = await DbFactory.CreateDbContextAsync();
 
             Category? dbCategory = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
             if (dbCategory is null)
             {
-                Error = true;
-                ErrorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                _error = true;
+                _errorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
             if (dbCategory.EditedDatetime > arg.EditedDatetime)
             {
-                Error = true;
-                ErrorMessage = "このデータは既に更新されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                _error = true;
+                _errorMessage = "このデータは既に更新されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
             int nameSameCount = await context.Categories.CountAsync(c => c.CategoryID != CategoryID && c.CategoryName == arg.CategoryName.Trim());
             if (nameSameCount > 0)
             {
-                Error = true;
-                ErrorMessage = "同じカテゴリー名で既に登録されているため更新できません。";
+                _error = true;
+                _errorMessage = "同じカテゴリー名で既に登録されているため更新できません。";
                 return;
             }
 
@@ -148,37 +148,37 @@ else
         }
         catch (Exception ex)
         {
-            Error = true;
-            ErrorMessage = ex.Message;
+            _error = true;
+            _errorMessage = ex.Message;
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             // 再レンダリングされないため、StateHasChangedメソッドを実行する。
-            StateHasChanged();
+            InvokeAsync(StateHasChanged);
         }
     }
 
     private async Task DeleteAsync()
     {
-        if (Busy)
+        if (_busy)
         {
             return;
         }
 
         try
         {
-            Busy = true;
-            Error = false;
-            ErrorMessage = string.Empty;
+            _busy = true;
+            _error = false;
+            _errorMessage = string.Empty;
 
             using var context = await DbFactory.CreateDbContextAsync();
 
             Category? dbCategory = await context.Categories.FirstOrDefaultAsync(c => c.CategoryID == CategoryID);
             if (dbCategory is null)
             {
-                Error = true;
-                ErrorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                _error = true;
+                _errorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
                 return;
             }
 
@@ -191,12 +191,12 @@ else
         }
         catch (Exception ex)
         {
-            Error = true;
-            ErrorMessage = ex.Message;
+            _error = true;
+            _errorMessage = ex.Message;
         }
         finally
         {
-            Busy = false;
+            _busy = false;
             // 再レンダリングされないため、StateHasChangedメソッドを実行する。
             StateHasChanged();
         }
