@@ -50,11 +50,11 @@
         if (context is not null && context.Products is not null)
         {
             _products = await context.Products
-            .Include(product => product.Category)
-            .Include(product => product.Unit)
-            .OrderBy(c => c.Category.SortOrder)
-            .ThenBy(c => c.SortOrder)
-            .ToListAsync();
+                             .Include(product => product.Category)
+                             .Include(product => product.Unit)
+                             .OrderBy(c => c.Category.SortOrder)
+                             .ThenBy(c => c.SortOrder)
+                             .ToListAsync();
         }
     }
 }

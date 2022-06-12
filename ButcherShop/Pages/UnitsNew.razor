@@ -78,10 +78,7 @@
 
     private async Task SubmitAsync(Category arg)
     {
-        if (_busy)
-        {
-            return;
-        }
+        if (_busy) return;
 
         try
         {

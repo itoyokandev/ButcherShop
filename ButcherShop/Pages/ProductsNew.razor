@@ -148,10 +148,7 @@
 
     private async Task SubmitAsync(Product arg)
     {
-        if (_busy)
-        {
-            return;
-        }
+        if (_busy) return;
 
         try
         {
@@ -161,7 +158,7 @@
 
             using var context = await DbFactory.CreateDbContextAsync();
 
-            int nameSameCount = await context.Products.CountAsync(c => c.ProductName == arg.ProductName.Trim());
+            int nameSameCount = await context.Products.CountAsync(p => p.ProductName == arg.ProductName.Trim());
             if (nameSameCount > 0)
             {
                 _error = true;
@@ -169,12 +166,38 @@
                 return;
             }
 
-            // TODO 消費税率の設定
-            arg.TaxRate = 0.08m;
-            arg.EditedDatetime = DateTime.Now;
-            // TODO User管理
-            arg.EditedUserID = 1;
-            await context.Products.AddAsync(arg);
+            Product dbProduct = new()
+                {
+                    ProductID = arg.ProductID,
+                    ProductName = arg.ProductName,
+                    Yomigana = arg.Yomigana,
+                    CategoryID = arg.CategoryID,
+                    LabelPrintingTarget = arg.LabelPrintingTarget,
+                    TargetOfSeasoning = arg.TargetOfSeasoning,
+                    UnitID = arg.UnitID,
+                    UnitPrice = arg.UnitPrice,
+                    // TODO: 消費税率の設定
+                    TaxRate = 0.08m,
+                    // TODO: User管理
+                    EditedDatetime = DateTime.Now,
+                    EditedUserID = 1,
+
+                };
+            if (arg.SortOrder == 0)
+            {
+                // 並び順が0の場合、同じカテゴリーの並び順の最大値+1を設定する
+                var sameCategoryProducts = await context.Products.CountAsync(p => p.CategoryID == arg.CategoryID);
+                if (sameCategoryProducts == 0)
+                {
+                    dbProduct.SortOrder = 1;
+                }
+                else
+                {
+                    dbProduct.SortOrder = await context.Products.Where(p => p.CategoryID == arg.CategoryID).MaxAsync(p => p.SortOrder);
+                }
+            }
+
+            await context.Products.AddAsync(dbProduct);
             await context.SaveChangesAsync();
             Nav.NavigateTo("products");
         }

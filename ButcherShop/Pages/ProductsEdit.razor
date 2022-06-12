@@ -2,6 +2,7 @@
 
 @inject IDbContextFactory<ButcherShopContext> DbFactory
 @inject NavigationManager Nav
+@inject DialogService DialogService
 
 <style>
     .row {
@@ -113,9 +114,9 @@ else
                     </div>
                     <div class="row justify-content-center">
                         <div class="col-md-8" style="margin-top: 16px;">
-                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" Is_busy="_busy" />
-                            <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 40px;" Text="更新する" Is_busy="_busy" />
-                            <RadzenButton ButtonType="ButtonType.Button" class="btn btn-danger" Text="削除する" Click="@(async (_) => { DeleteAsync(); })" Is_busy="_busy" />
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 40px; width: 140px;" Text="戻る" Click="@Cancel" Is_busy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" style="margin-right: 40px; width: 140px;" Text="更新する" Is_busy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Button" class="btn btn-danger" style="width: 140px;" Text="削除する" Click="@(async (_) => { DeleteAsync(); })" Is_busy="_busy" />
                         </div>
                     </div>
                 </RadzenFieldset>
@@ -137,6 +138,7 @@ else
     [Parameter]
     public int ProductID { get; set; }
 
+
     private Product? _product;
 
     private IEnumerable<Category>? _categories;
@@ -154,9 +156,9 @@ else
         using var context = await DbFactory.CreateDbContextAsync();
 
         _product = await context.Products
-                    .Include(p => p.Category)
-                    .Include(p => p.Unit)
-                    .FirstOrDefaultAsync(c => c.ProductID == ProductID);
+        .Include(p => p.Category)
+        .Include(p => p.Unit)
+        .FirstOrDefaultAsync(c => c.ProductID == ProductID);
         _categories = await context.Categories.OrderBy(c => c.SortOrder).ToListAsync();
         _units = await context.Units.OrderBy(u => u.SortOrder).ToListAsync();
     }
@@ -173,10 +175,7 @@ else
     /// <param name="arg"></param>
     private async Task SubmitAsync(Product arg)
     {
-        if (_busy)
-        {
-            return;
-        }
+        if (_busy) return;
 
         try
         {
@@ -238,10 +237,7 @@ else
 
     private async Task DeleteAsync()
     {
-        if (_busy)
-        {
-            return;
-        }
+        if (_busy) return;
 
         try
         {
@@ -256,6 +252,22 @@ else
             {
                 _error = true;
                 _errorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                return;
+            }
+
+            bool? result = await DialogService.OpenAsync("削除確認", ds =>
+            @<div>
+                <div class="modal-body">
+                    <p><b>@_product.ProductName</b> を本当に削除しますか？</p>
+                </div>
+                <div class="modal-footer">
+                    <RadzenButton Text="削除しない" Click="() => ds.Close(false)" ButtonStyle="ButtonStyle.Light" />
+                    <RadzenButton Text="削除する" Click="() => ds.Close(true)" ButtonStyle="ButtonStyle.Danger" />
+                </div>
+            </div>);
+
+            if (result is null || result.Value == false)
+            {
                 return;
             }
 

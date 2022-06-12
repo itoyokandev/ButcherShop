@@ -13,6 +13,8 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddDbContextFactory<ButcherShopContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ButcherShopDatabase")));
 
+builder.Services.AddScoped<DialogService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

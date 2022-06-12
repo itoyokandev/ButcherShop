@@ -70,10 +70,7 @@
 
     private async Task SubmitAsync(Unit arg)
     {
-        if (_busy)
-        {
-            return;
-        }
+        if (_busy) return;
 
         try
         {
@@ -107,7 +104,7 @@
         {
             _busy = false;
             // 再レンダリングされないため、StateHasChangedメソッドを実行する。
-            InvokeAsync(StateHasChanged);
+            StateHasChanged();
         }
     }
 

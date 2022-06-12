@@ -1,6 +1,7 @@
 ﻿@page "/units/{UnitID:int}"
 
 @inject IDbContextFactory<ButcherShopContext> DbFactory
+@inject DialogService DialogService
 @inject NavigationManager Nav
 
 <style>
@@ -39,9 +40,9 @@ else
                     </div>
                     <div class="row justify-content-center">
                         <div class="col-md-8" style="margin-top: 16px;">
-                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 20px;" Text="戻る" Click="@Cancel" Is_busy="_busy" />
-                            <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" Style="margin-right: 40px;" Text="更新する" Is_busy="_busy" />
-                            <RadzenButton ButtonType="ButtonType.Button" class="btn btn-danger" Text="削除する" Click="@(async (_) => { DeleteAsync(); })" Is_busy="_busy" />
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 40px; width: 140px;" Text="戻る" Click="@Cancel" Is_busy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" style="margin-right: 40px; width: 140px;" Text="更新する" Is_busy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Button" class="btn btn-danger" style="width: 140px;" Text="削除する" Click="@(async (_) => { DeleteAsync(); })" Is_busy="_busy" />
                         </div>
                     </div>
                 </RadzenFieldset>
@@ -90,10 +91,7 @@ else
     /// <param name="arg"></param>
     private async Task SubmitAsync(Unit arg)
     {
-        if (_busy)
-        {
-            return;
-        }
+        if (_busy) return;
 
         try
         {
@@ -149,13 +147,26 @@ else
 
     private async Task DeleteAsync()
     {
-        if (_busy)
-        {
-            return;
-        }
+        if (_busy) return;
 
         try
         {
+            bool? result = await DialogService.OpenAsync("削除確認", ds =>
+            @<div>
+                <div class="modal-body">
+                    <p><b>@_unit.UnitName</b> を本当に削除しますか？</p>
+                </div>
+                <div class="modal-footer">
+                    <RadzenButton Text="削除しない" Click="() => ds.Close(false)" ButtonStyle="ButtonStyle.Light" />
+                    <RadzenButton Text="削除する" Click="() => ds.Close(true)" ButtonStyle="ButtonStyle.Danger" />
+                </div>
+            </div>);
+
+            if (result is null || result.Value == false)
+            {
+                return;
+            }
+
             _busy = true;
             _error = false;
             _errorMessage = string.Empty;
@@ -170,8 +181,13 @@ else
                 return;
             }
 
-            // TODO 商品マスタに紐づいているカテゴリーがある場合エラー
-
+            var usedCount = await context.Products.CountAsync(p => p.UnitID == UnitID);
+            if (usedCount > 0)
+            {
+                _error = true;
+                _errorMessage = "商品マスタに紐づいているため削除できません。";
+                return;
+            }
 
             context.Units.Remove(dbUnit);
             await context.SaveChangesAsync();
