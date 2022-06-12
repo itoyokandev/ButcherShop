@@ -1,0 +1,231 @@
+﻿@page "/seasonings/{SeasoningID:int}"
+
+@inject IDbContextFactory<ButcherShopContext> DbFactory
+@inject DialogService DialogService
+@inject NavigationManager Nav
+
+<style>
+    .row {
+        margin-bottom: 16px;
+    }
+</style>
+
+@if (_seasoning is null)
+{
+    <p><em>読み込み中です...</em></p>
+}
+else
+{
+    <RadzenTemplateForm Data="_seasoning" Submit="@(async (Seasoning arg) => { SubmitAsync(arg); })">
+        <div class="row">
+            <div class="col-md-12">
+                <RadzenFieldset>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="味付け" for="SeasoningName" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenTextBox style="width: 100%;" Id="SeasoningName" Name="SeasoningName" @bind-Value="_seasoning.SeasoningName" />
+                            <RadzenRequiredValidator Component="SeasoningName" Text="味付けは必ず入力してください" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="よみがな" for="Yomigana" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenTextBox style="width: 100%;" Id="Yomigana" Name="Yomigana" @bind-Value="_seasoning.Yomigana" />
+                            <RadzenRequiredValidator Component="Yomigana" Text="よみがなは必ず入力してください" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="カテゴリー" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenDropDown AllowClear="false"
+                                        TValue="int"
+                                        AllowVirtualization="true"
+                                        Class="w-100"
+                                        Data=@_categories
+                                        TextProperty="CategoryName"
+                                        ValueProperty="CategoryID"
+                                        @bind-Value="_seasoning.CategoryID" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 align-items-center d-flex">
+                            <RadzenLabel Text="並び順" for="SortOrder" />
+                        </div>
+                        <div class="col-md-8">
+                            <RadzenNumeric style="width: 100%;" Id="SortOrder" Name="SortOrder" @bind-Value="_seasoning.SortOrder" />
+                            <RadzenRequiredValidator Component="SortOrder" Text="並び順は必ず入力してください" />
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col-md-8" style="margin-top: 16px;">
+                            <RadzenButton ButtonStyle="ButtonStyle.Light" style="display: inline-block; margin-right: 40px; width: 140px;" Text="戻る" Click="@Cancel" Is_busy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Submit" class="btn btn-secondary" style="margin-right: 40px; width: 140px;" Text="更新する" Is_busy="_busy" />
+                            <RadzenButton ButtonType="ButtonType.Button" class="btn btn-danger" style="width: 140px;" Text="削除する" Click="@(async (_) => { DeleteAsync(); })" Is_busy="_busy" />
+                        </div>
+                    </div>
+                </RadzenFieldset>
+            </div>
+        </div>
+    </RadzenTemplateForm>
+}
+
+@if (_error)
+{
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-danger">@_errorMessage</div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int SeasoningID { get; set; }
+
+    private Seasoning? _seasoning;
+
+    private IEnumerable<Category>? _categories;
+
+    private bool _busy;
+
+    private bool _error;
+
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = await DbFactory.CreateDbContextAsync();
+
+        _seasoning = await context.Seasonings.FirstOrDefaultAsync(s => s.SeasoningID == SeasoningID);
+        _categories = await context.Categories.OrderBy(c => c.SortOrder).ToListAsync();
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("seasonings");
+    }
+
+    /// <summary>
+    /// 必須項目が未入力の場合、Submitメソッドはよびだされない。<br>
+    /// RadzenRequiredValidator
+    /// </summary>
+    /// <param name="arg"></param>
+    private async Task SubmitAsync(Seasoning arg)
+    {
+        if (_busy) return;
+
+        try
+        {
+            _busy = true;
+            _error = false;
+            _errorMessage = string.Empty;
+
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            Seasoning? dbSeasoning = await context.Seasonings.FirstOrDefaultAsync(s => s.SeasoningID == SeasoningID);
+            if (dbSeasoning is null)
+            {
+                _error = true;
+                _errorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                return;
+            }
+
+            if (dbSeasoning.EditedDatetime > arg.EditedDatetime)
+            {
+                _error = true;
+                _errorMessage = "このデータは既に更新されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                return;
+            }
+
+            int nameSameCount = await context.Seasonings.CountAsync(s => s.SeasoningID != SeasoningID &&
+                                                                 s.CategoryID == arg.CategoryID &&
+                                                                 s.SeasoningName == arg.SeasoningName.Trim());
+            if (nameSameCount > 0)
+            {
+                _error = true;
+                _errorMessage = "同じ味付けが既に登録されているため更新できません。";
+                return;
+            }
+
+            dbSeasoning.SeasoningName = arg.SeasoningName.Trim();
+            dbSeasoning.Yomigana = arg.Yomigana;
+            dbSeasoning.CategoryID = arg.CategoryID;
+            dbSeasoning.SortOrder = arg.SortOrder;
+            dbSeasoning.EditedDatetime = DateTime.Now;
+            // TODO User管理
+            dbSeasoning.EditedUserID = 1;
+            var affectedRows = await context.SaveChangesAsync();
+            Nav.NavigateTo("seasonings");
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+            // 再レンダリングされないため、StateHasChangedメソッドを実行する。
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_busy) return;
+
+        try
+        {
+            bool? result = await DialogService.OpenAsync("削除確認", ds =>
+    @<div>
+        <div class="modal-body">
+            <p><b>@_seasoning.SeasoningName</b> を本当に削除しますか？</p>
+        </div>
+        <div class="modal-footer">
+            <RadzenButton Text="削除しない" Click="() => ds.Close(false)" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton Text="削除する" Click="() => ds.Close(true)" ButtonStyle="ButtonStyle.Danger" />
+        </div>
+    </div>);
+
+            if (result is null || result.Value == false)
+            {
+                return;
+            }
+
+            _busy = true;
+            _error = false;
+            _errorMessage = string.Empty;
+
+            using var context = await DbFactory.CreateDbContextAsync();
+
+            Seasoning? dbSeasoning = await context.Seasonings.FirstOrDefaultAsync(s => s.SeasoningID == SeasoningID);
+            if (dbSeasoning is null)
+            {
+                _error = true;
+                _errorMessage = "このデータは削除されているため更新できません。戻るボタンをクリックして一覧に戻ってください。";
+                return;
+            }
+
+            context.Seasonings.Remove(dbSeasoning);
+            await context.SaveChangesAsync();
+            Nav.NavigateTo("seasonings");
+        }
+        catch (Exception ex)
+        {
+            _error = true;
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+            // 再レンダリングされないため、StateHasChangedメソッドを実行する。
+            StateHasChanged();
+        }
+    }
+}

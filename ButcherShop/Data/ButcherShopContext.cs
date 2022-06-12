@@ -14,6 +14,8 @@ namespace ButcherShop.Data
 
         public DbSet<Unit>? Units { get; set; }
 
+        public DbSet<Seasoning>? Seasonings { get; set; }
+
         public DbSet<Product>? Products { get; set; }
 
         /// <summary>

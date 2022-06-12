@@ -1,0 +1,55 @@
+﻿@page "/seasonings"
+
+@inject IDbContextFactory<ButcherShopContext> DbFactory
+
+<h3>味付けマスタ</h3>
+
+<a href="/seasonings/new" class="btn btn-primary" role="button">味付けを追加する</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>カテゴリー</th>
+            <th>味付け</th>
+            <th>並び順</th>
+            <th>更新日時</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (_seasonings is null)
+        {
+            <p><em>読み込み中です...</em></p>
+        }
+        else
+        {
+            @foreach (var seasoning in _seasonings)
+            {
+                <tr>
+                    <td>@seasoning.Category.CategoryName</td>
+                    <td><a href="/seasonings/@seasoning.SeasoningID">@seasoning.SeasoningName (@seasoning.Yomigana)</a></td>
+                    <td>@seasoning.SortOrder</td>
+                    <td>@seasoning.EditedDatetime</td>
+                </tr>
+            }
+
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Seasoning>? _seasonings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var context = DbFactory.CreateDbContext();
+
+        if (context is not null && context.Seasonings is not null)
+        {
+            _seasonings = await context.Seasonings
+                                .Include(s => s.Category)
+                                .OrderBy(s => s.Category.SortOrder)
+                                .ThenBy(s => s.SortOrder)
+                                .ToListAsync();
+        }
+    }
+}

@@ -193,7 +193,9 @@
                 }
                 else
                 {
-                    dbProduct.SortOrder = await context.Products.Where(p => p.CategoryID == arg.CategoryID).MaxAsync(p => p.SortOrder);
+                    dbProduct.SortOrder = await context.Products
+                    .Where(p => p.CategoryID == arg.CategoryID)
+                    .MaxAsync(p => p.SortOrder) + 1;
                 }
             }
 
